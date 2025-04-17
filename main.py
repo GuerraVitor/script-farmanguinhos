@@ -93,7 +93,7 @@ perfis = 0
 traffic = 2
 
 # Itera pelas páginas de resultados
-for j in range(1):
+for j in range(numero):
     if traffic % 10 == 0:
         page = driver.find_element(By.LINK_TEXT, "próximo")
     else:
@@ -102,7 +102,7 @@ for j in range(1):
         listsize = el.find_elements(By.TAG_NAME, "li")
     
     # Itera pelos currículos na página
-    for i in range(1):
+    for i in range(len(listsize)):
         try:
             element = driver.find_element(By.CSS_SELECTOR, "div[class = 'resultado']")
             lista = element.find_elements(By.TAG_NAME, "li")
@@ -145,10 +145,10 @@ for j in range(1):
         except Exception as e:
             print(e)
     
-    # # Navega para a próxima página
-    # page.click()
-    # time.sleep(3)
-    # traffic += 1
+    # Navega para a próxima página
+    page.click()
+    time.sleep(3)
+    traffic += 1
 
 # salva dicionario final
 output_file = "/home/vitor/projects/fiocruz/selenium-bot/seleniumlattes/output.list"
