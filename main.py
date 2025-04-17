@@ -10,6 +10,7 @@ import time
 import re
 import csv
 import numpy as np
+import os
 
 # Configuração do WebDriver
 service = Service(executable_path="chromedriver.bin")
@@ -92,7 +93,7 @@ perfis = 0
 traffic = 2
 
 # Itera pelas páginas de resultados
-for j in range(numero):
+for j in range(1):
     if traffic % 10 == 0:
         page = driver.find_element(By.LINK_TEXT, "próximo")
     else:
@@ -101,7 +102,7 @@ for j in range(numero):
         listsize = el.find_elements(By.TAG_NAME, "li")
     
     # Itera pelos currículos na página
-    for i in range(len(listsize)):
+    for i in range(1):
         try:
             element = driver.find_element(By.CSS_SELECTOR, "div[class = 'resultado']")
             lista = element.find_elements(By.TAG_NAME, "li")
@@ -144,13 +145,17 @@ for j in range(numero):
         except Exception as e:
             print(e)
     
-    # Navega para a próxima página
-    page.click()
-    time.sleep(3)
-    traffic += 1
+    # # Navega para a próxima página
+    # page.click()
+    # time.sleep(3)
+    # traffic += 1
 
-# Exibe o dicionário final
-print(dictionary)
+# salva dicionario final
+output_file = "/home/vitor/projects/fiocruz/selenium-bot/seleniumlattes/output.list"
+with open(output_file, "w", encoding="utf-8") as file:
+    for nome, idlattes in dictionary.items():
+        file.write(f"{idlattes} , {nome}\n")
+
 
 # Aguarda antes de encerrar o WebDriver
 time.sleep(10)
