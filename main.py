@@ -130,9 +130,14 @@ for j in range(numero):
 
             # Atualiza o dicionário com os dados extraídos
             perfis += 1
-            print(f'O número de perfis visualizados foi de: {perfis}')
+            print(f'{perfis} foram vizualidados ate aqui')
             dictionary.update({nome: idlattes})
             print(dictionary)
+
+            # Salva o dicionário no arquivo após cada atualização
+            output_file = "/home/vitor/projects/fiocruz/selenium-lattes/output.list"
+            with open(output_file, "a", encoding="utf-8") as file:  # Use "a" para adicionar ao arquivo
+                file.write(f"{idlattes} , {nome}\n")
 
             # Fecha a janela do currículo e retorna à janela principal
             driver.close()
@@ -149,13 +154,6 @@ for j in range(numero):
     page.click()
     time.sleep(3)
     traffic += 1
-
-# salva dicionario final
-output_file = "/home/vitor/projects/fiocruz/selenium-bot/seleniumlattes/output.list"
-with open(output_file, "w", encoding="utf-8") as file:
-    for nome, idlattes in dictionary.items():
-        file.write(f"{idlattes} , {nome}\n")
-
 
 # Aguarda antes de encerrar o WebDriver
 time.sleep(10)
