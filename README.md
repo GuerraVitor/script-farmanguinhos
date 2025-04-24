@@ -1,5 +1,5 @@
-Web scraping bot created to collect data from Curriculum Lattes site.
+esse projeto é um bot de web scraping, criado para coletar dados publicos disponiveis no site Curriculum Lattes.
 
-You can find an example of search in the "project" folder, where we get the data (ID and name of the searched researchers, got using main.py and main_copy.py) and add it to a .txt file (accomplished using the .ipynb file).
+Você pode encontrar um exemplo de output, onde obtemos os dados (ID e nome dos pesquisadores buscados, obtidos usando main.py) e os adicionamos a um arquivo .list. 
 
-This repository is a clone of the original project initiated by [Francisco Florêncio](https://github.com/franciscoflorencio) and has now been passed to me for further development and maintenance.
+Este repositório é um clone do projeto original iniciado por Francisco Florêncio e que agora foi passado para mim (Vitor Guerra) para continuação do desenvolvimento e implementação.
