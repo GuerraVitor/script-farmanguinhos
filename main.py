@@ -39,6 +39,7 @@ WebDriverWait(driver, 5).until(
 
 # Inicializa o dicionário para armazenar os resultados
 output_file = "/home/vitor/projects/fiocruz/selenium-lattes/output.list"
+buffer = []  # Lista para acumular os dados até a escrita no arquivo
 
 # Obtém o número total de currículos e páginas
 el = driver.find_element(By.CSS_SELECTOR, "div[class = 'resultado']")
@@ -86,9 +87,14 @@ for j in range(numero):
             string = ul[1].text
             idlattes = re.findall(r'\d+', string)[0]
 
-            # Salva os dados no arquivo
-            with open(output_file, "a", encoding="utf-8") as file:
-                file.write(f"{idlattes} , {nome}\n")
+            # Adiciona os dados ao buffer
+            buffer.append(f"{idlattes} , {nome}")
+
+            # Salva os dados no arquivo quando o buffer atingir 2 itens
+            if len(buffer) == 2:
+                with open(output_file, "a", encoding="utf-8") as file:
+                    file.write("\n".join(buffer) + "\n")
+                buffer.clear()  # Limpa o buffer após salvar
 
             # Fecha a janela do currículo e retorna à janela principal
             driver.close()
@@ -105,6 +111,11 @@ for j in range(numero):
     page.click()
     time.sleep(3)
     traffic += 1
+
+# Salva os dados restantes no buffer (se houver)
+if buffer:
+    with open(output_file, "a", encoding="utf-8") as file:
+        file.write("\n".join(buffer) + "\n")
 
 # Aguarda antes de encerrar o WebDriver
 time.sleep(10)
