@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
 import time
 import re
 import numpy as np
@@ -38,7 +39,7 @@ WebDriverWait(driver, 5).until(
 )
 
 # Inicializa o dicionário para armazenar os resultados
-output_file = "/home/vitor/projects/fiocruz/selenium-lattes/output.list"
+output_file = "/home/vitor/Projects/fiocruz/selenium-lattes/output.list"
 buffer = []  # Lista para acumular os dados até a escrita no arquivo
 
 # Obtém o número total de currículos e páginas
@@ -51,6 +52,16 @@ numero = int(np.ceil(int(numero) / 10))
 
 # Variáveis de controle
 traffic = 2
+
+def fechar_modal_se_existir(driver):
+    try:
+        close = driver.find_element(By.ID, "idbtnfechar")
+        close.click()
+        WebDriverWait(driver, 5).until(
+            EC.invisibility_of_element_located((By.ID, "idbtnfechar"))
+        )
+    except NoSuchElementException:
+        pass
 
 # Itera pelas páginas de resultados
 for j in range(numero):
@@ -67,15 +78,22 @@ for j in range(numero):
             element = driver.find_element(By.CSS_SELECTOR, "div[class = 'resultado']")
             lista = element.find_elements(By.TAG_NAME, "li")
             link = lista[i].find_element(By.TAG_NAME, "a")
-            link.click()
+            try:
+                link.click()
+            except ElementClickInterceptedException:
+                fechar_modal_se_existir(driver)
+                link.click()
 
-            # Aguarda o botão "Abrir Currículo" e clica nele
-            WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "a#idbtnabrircurriculo.button"))
+            # Aguarda o botão "Abrir Currículo" estar clicável e clica nele pelo ID
+            WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "idbtnabrircurriculo"))
             )
-            curriculo = driver.find_element(By.PARTIAL_LINK_TEXT, value="Abrir Currículo")
-            time.sleep(4)
-            curriculo.click()
+            curriculo = driver.find_element(By.ID, "idbtnabrircurriculo")
+            try:
+                curriculo.click()
+            except ElementClickInterceptedException:
+                fechar_modal_se_existir(driver)
+                curriculo.click()
 
             # Alterna para a nova janela
             wait.until(EC.number_of_windows_to_be(2))
@@ -100,15 +118,18 @@ for j in range(numero):
             driver.close()
             driver.switch_to.window(driver.window_handles[0])
 
-            # Fecha o modal
-            close = driver.find_element(By.ID, "idbtnfechar")
-            close.click()
+            fechar_modal_se_existir(driver)
             
         except Exception as e:
             print(e)
+            fechar_modal_se_existir(driver)
     
     # Navega para a próxima página
-    page.click()
+    try:
+        page.click()
+    except ElementClickInterceptedException:
+        fechar_modal_se_existir(driver)
+        page.click()
     time.sleep(3)
     traffic += 1
 
