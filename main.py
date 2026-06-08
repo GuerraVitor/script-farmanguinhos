@@ -2,12 +2,8 @@ import logging
 import math
 import re
 import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, TimeoutException
+from typing import List, Optional, Tuple
+from playwright.sync_api import sync_playwright, Page, BrowserContext, TimeoutError as PlaywrightTimeoutError
 
 # --- Configuration ---
 OUTPUT_FILE = "/home/vitor/Projects/fiocruz/selenium-lattes/output.list"
@@ -21,185 +17,191 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def fechar_modal_se_existir(driver):
+
+def fechar_modal_se_existir(page: Page) -> None:
+    """Verifica se há um modal aberto na página principal e o fecha."""
     try:
-        close = driver.find_element(By.ID, "idbtnfechar")
-        if close.is_displayed():
-            driver.execute_script("arguments[0].click();", close)
-            WebDriverWait(driver, 3).until(
-                EC.invisibility_of_element_located((By.ID, "idbtnfechar"))
-            )
+        close_btn = page.locator("#idbtnfechar")
+        if close_btn.is_visible():
+            close_btn.evaluate("node => node.click()")
+            close_btn.wait_for(state="hidden", timeout=3000)
             logger.debug("Modal fechado com sucesso.")
-    except Exception as e:
+    except Exception:
         pass
 
-def main():
-    logger.info("Iniciando o script de extração do Lattes.")
 
-    # Configuração do WebDriver
-    driver = webdriver.Chrome()
+def salvar_buffer(buffer: List[str], arquivo_saida: str) -> None:
+    """Salva os dados do buffer no arquivo e limpa a lista em seguida."""
+    if not buffer:
+        return
+    
+    with open(arquivo_saida, "a", encoding="utf-8") as file:
+        file.write("\n".join(buffer) + "\n")
+    logger.debug("Buffer salvo no arquivo.")
+    buffer.clear()
+
+
+def executar_busca_inicial(page: Page, query: str) -> None:
+    """Navega até o Busca Lattes, preenche a busca avançada e envia o formulário."""
+    logger.info("Acessando o Busca Lattes...")
+    page.goto("https://buscatextual.cnpq.br/buscatextual/busca.do")
+
+    logger.info("Navegando para a busca avançada...")
+    page.locator("div#tit_simples.control-bar-top a").click()
+
+    logger.info("Preenchendo o campo de busca...")
+    input_element = page.locator("textarea.input-text.min-height")
+    input_element.clear()
+    input_element.fill(query)
+
+    logger.info("Executando a busca...")
+    page.locator("a#botaoBuscaFiltros.button").click()
+
+    logger.info("Aguardando carregamento dos resultados...")
+    page.wait_for_selector("div.resultado", timeout=10000)
+
+
+def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: int) -> Optional[Tuple[str, str]]:
+    """Abre o currículo baseado no índice da lista, extrai Nome e ID Lattes, e fecha a aba."""
+    # Re-localiza os elementos a cada iteração para evitar 'staleness'
+    resultado_div = main_page.locator("div.resultado")
+    lista = resultado_div.locator("li")
+    link = lista.nth(indice).locator("a").first
+
+    link.scroll_into_view_if_needed()
+    time.sleep(0.5)
+
+    # Evita que eventos nativos bloqueiem o clique (ex: header sobrepondo elemento)
+    link.evaluate("node => node.click()")
+
+    curriculo_btn = main_page.locator("#idbtnabrircurriculo")
+    curriculo_btn.wait_for(state="visible", timeout=10000)
+    time.sleep(1)
+
+    new_page = None
+    window_opened = False
+
+    # Tenta clicar no botão e aguarda a nova aba abrir
+    for attempt in range(4):
+        try:
+            with context.expect_page(timeout=4000) as new_page_info:
+                curriculo_btn.click(force=True)
+            new_page = new_page_info.value
+            window_opened = True
+            break
+        except PlaywrightTimeoutError:
+            logger.debug(f"Aba não abriu. Tentativa {attempt + 1}.")
+            continue
+
+    if not window_opened or not new_page:
+        raise Exception("Timeout: Falha ao tentar abrir a nova aba do currículo.")
 
     try:
-        # Acessa o site do Busca Lattes e maximiza a janela
-        logger.info("Acessando o Busca Lattes...")
-        driver.get("https://buscatextual.cnpq.br/buscatextual/busca.do")
-        driver.maximize_window()
+        new_page.wait_for_selector(".nome", timeout=10000)
+        nome = new_page.locator(".nome").first.text_content().strip()
+        
+        # Busca pelo ID Lattes de forma tolerante a variações estruturais
+        ul_items = new_page.locator("li").all()
+        idlattes = None
+        for item in ul_items:
+            text = item.text_content()
+            if "Endereço para acessar este CV:" in text:
+                matches = re.findall(r'\d{16}', text)
+                if matches:
+                    idlattes = matches[0]
+                    break
+                    
+        if not idlattes:
+            # Fallback de segurança: busca em todo o corpo da página
+            matches = re.findall(r'\d{16}', new_page.content())
+            idlattes = matches[0] if matches else "ID_NAO_ENCONTRADO"
 
-        # Configuração de espera explícita
-        wait = WebDriverWait(driver, 10)
+        return idlattes, nome
+    finally:
+        # Garante que a aba do currículo sempre seja fechada
+        new_page.close()
 
-        # Navega para a busca avançada
-        logger.info("Navegando para a busca avançada...")
-        buscaavancada = driver.find_element(By.CSS_SELECTOR, "div#tit_simples.control-bar-top")
-        buscaavancadabutton = buscaavancada.find_element(By.TAG_NAME, 'a')
-        buscaavancadabutton.click()
 
-        # Preenche o campo de busca com os termos desejados
-        logger.info("Preenchendo o campo de busca...")
-        input_element = driver.find_element(By.CSS_SELECTOR, "textarea.input-text.min-height")
-        input_element.clear()
-        input_element.send_keys(SEARCH_QUERY)
+def navegar_proxima_pagina(page: Page, traffic_index: int) -> None:
+    """Encontra e clica no link numérico correto para a próxima página."""
+    if traffic_index % 10 == 0:
+        page_link = page.get_by_role("link", name="próximo").first
+    else:
+        page_link = page.get_by_role("link", name=str(traffic_index), exact=True).first
 
-        # Realiza a busca
-        logger.info("Executando a busca...")
-        botaopesquisa = driver.find_element(By.CSS_SELECTOR, "a#botaoBuscaFiltros.button")
-        botaopesquisa.click()
+    page_link.scroll_into_view_if_needed()
+    time.sleep(0.5)
+    page_link.evaluate("node => node.click()")
+    time.sleep(3)
 
-        # Aguarda o carregamento dos resultados
-        logger.info("Aguardando carregamento dos resultados...")
-        WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div[class = 'resultado']"))
-        )
 
-        # Inicializa o dicionário para armazenar os resultados
-        buffer = []  # Lista para acumular os dados até a escrita no arquivo
+def main() -> None:
+    logger.info("Iniciando o script de extração do Lattes.")
 
-        # Obtém o número total de currículos e páginas
-        time.sleep(2)
-        numero_element = driver.find_element(By.CSS_SELECTOR, "div[class = 'tit_form'] b")
-        total_curriculos = int(numero_element.text)
-        numero_paginas = math.ceil(total_curriculos / 10)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context()
+        page = context.new_page()
 
-        logger.info(f"Total de currículos encontrados: {total_curriculos}")
-        logger.info(f"Total de páginas a processar: {numero_paginas}")
+        try:
+            executar_busca_inicial(page, SEARCH_QUERY)
 
-        # Variáveis de controle
-        traffic = 2
+            time.sleep(2)
+            numero_element = page.locator("div.tit_form b").first
+            total_curriculos = int(numero_element.text_content())
+            numero_paginas = math.ceil(total_curriculos / 10)
 
-        # Itera pelas páginas de resultados
-        for j in range(numero_paginas):
-            logger.info(f"Processando página {j + 1} de {numero_paginas}...")
+            logger.info(f"Total de currículos encontrados: {total_curriculos}")
+            logger.info(f"Total de páginas a processar: {numero_paginas}")
 
-            if traffic % 10 == 0:
-                page = driver.find_element(By.LINK_TEXT, "próximo")
-            else:
-                page = driver.find_element(By.LINK_TEXT, str(traffic))
+            buffer: List[str] = []
+            traffic = 2
 
-            el = driver.find_element(By.CSS_SELECTOR, "div[class = 'resultado']")
-            listsize = el.find_elements(By.TAG_NAME, "li")
+            for j in range(numero_paginas):
+                logger.info(f"Processando página {j + 1} de {numero_paginas}...")
 
-            # Itera pelos currículos na página
-            for i in range(len(listsize)):
-                try:
-                    element = driver.find_element(By.CSS_SELECTOR, "div[class = 'resultado']")
-                    lista = element.find_elements(By.TAG_NAME, "li")
-                    link = lista[i].find_element(By.TAG_NAME, "a")
+                resultado_div = page.locator("div.resultado")
+                quantidade_items = resultado_div.locator("li").count()
 
-                    # Rola a tela até o elemento para garantir visibilidade
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", link)
-                    time.sleep(0.5)
+                for i in range(quantidade_items):
+                    try:
+                        dados = extrair_dados_curriculo(context, page, i)
+                        if dados:
+                            idlattes, nome = dados
+                            logger.info(f"Dados extraídos com sucesso - Nome: {nome}, ID Lattes: {idlattes}")
+                            buffer.append(f"{idlattes} , {nome}")
 
-                    # Usamos JS para abrir o painel pois não gera popup (evita problemas com menus fixos interceptando o click)
-                    driver.execute_script("arguments[0].click();", link)
+                            if len(buffer) >= 2:
+                                salvar_buffer(buffer, OUTPUT_FILE)
 
-                    # Aguarda o botão "Abrir Currículo" ficar visível
-                    wait.until(EC.visibility_of_element_located((By.ID, "idbtnabrircurriculo")))
-                    curriculo = driver.find_element(By.ID, "idbtnabrircurriculo")
+                        fechar_modal_se_existir(page)
 
-                    # Pausa curta para garantir que o script do painel atrelou o evento de nova janela ao botão
-                    time.sleep(1)
+                    except Exception as e:
+                        logger.error(f"Erro ao processar currículo {i + 1} da página {j + 1}: {e}")
+                        # Recuperação: Fecha qualquer aba que tenha ficado órfã por causa do erro
+                        for aba in context.pages:
+                            if aba != page:
+                                aba.close()
+                        fechar_modal_se_existir(page)
 
-                    # Tenta clicar nativamente no botão. Se o navegador ignorar ou a aba não abrir, tenta de novo.
-                    window_opened = False
-                    for attempt in range(4):
-                        try:
-                            curriculo.click()
-                        except ElementClickInterceptedException:
-                            time.sleep(1)
-                            continue
+                # Navega para a próxima página se não for a última
+                if j < numero_paginas - 1:
+                    navegar_proxima_pagina(page, traffic)
+                    traffic += 1
 
-                        try:
-                            # Aguarda até 4 segundos para ver se a nova aba realmente abriu após este clique
-                            WebDriverWait(driver, 4).until(EC.number_of_windows_to_be(2))
-                            window_opened = True
-                            break
-                        except TimeoutException:
-                            logger.debug(f"Aba não abriu. Clicando novamente em 'Abrir Currículo' (tentativa {attempt+1}).")
-                            continue
-
-                    if not window_opened:
-                        raise Exception("Timeout: Falha ao tentar abrir a nova aba do currículo.")
-
-                    # Alterna para a nova janela
-                    driver.switch_to.window(driver.window_handles[1])
-
-                    # Aguarda o carregamento do currículo (o elemento do nome) antes de extrair os dados
-                    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "nome")))
-
-                    # Extrai informações do currículo
-                    nome = driver.find_element(By.CLASS_NAME, "nome").text
-                    ul = driver.find_elements(By.TAG_NAME, "li")
-                    string = ul[1].text
-                    idlattes = re.findall(r'\d+', string)[0]
-
-                    logger.info(f"Dados extraídos com sucesso - Nome: {nome}, ID Lattes: {idlattes}")
-
-                    # Adiciona os dados ao buffer
-                    buffer.append(f"{idlattes} , {nome}")
-
-                    # Salva os dados no arquivo quando o buffer atingir 2 itens
-                    if len(buffer) == 2:
-                        with open(OUTPUT_FILE, "a", encoding="utf-8") as file:
-                            file.write("\n".join(buffer) + "\n")
-                        logger.debug("Buffer salvo no arquivo e limpo.")
-                        buffer.clear()  # Limpa o buffer após salvar
-
-                    # Fecha a janela do currículo e retorna à janela principal
-                    driver.close()
-                    driver.switch_to.window(driver.window_handles[0])
-
-                    fechar_modal_se_existir(driver)
-
-                except Exception as e:
-                    logger.error(f"Erro ao processar currículo {i + 1} da página {j + 1}: {e}", exc_info=True)
-                    # Recupera o estado das janelas caso ocorra erro com a aba do currículo aberta
-                    while len(driver.window_handles) > 1:
-                        driver.switch_to.window(driver.window_handles[-1])
-                        driver.close()
-                    driver.switch_to.window(driver.window_handles[0])
-                    fechar_modal_se_existir(driver)
-
-            # Navega para a próxima página
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", page)
-            time.sleep(0.5)
-            driver.execute_script("arguments[0].click();", page)
-            time.sleep(3)
-            traffic += 1
-
-        # Salva os dados restantes no buffer (se houver)
-        if buffer:
-            with open(OUTPUT_FILE, "a", encoding="utf-8") as file:
-                file.write("\n".join(buffer) + "\n")
+            # Descarrega qualquer dado restante
+            salvar_buffer(buffer, OUTPUT_FILE)
             logger.info("Dados remanescentes salvos no arquivo.")
 
-    except Exception as e:
-        logger.critical(f"Erro crítico durante a execução do script: {e}")
-    finally:
-        # Aguarda antes de encerrar o WebDriver e garante que sempre será fechado
-        logger.info("Encerrando o WebDriver...")
-        time.sleep(2)
-        driver.quit()
-        logger.info("Script finalizado.")
+        except Exception as e:
+            logger.critical(f"Erro crítico durante a execução do script: {e}")
+        finally:
+            logger.info("Encerrando o WebDriver...")
+            time.sleep(2)
+            context.close()
+            browser.close()
+            logger.info("Script finalizado.")
+
 
 if __name__ == "__main__":
     main()
