@@ -7,15 +7,8 @@ from playwright.sync_api import sync_playwright, Page, BrowserContext, TimeoutEr
 
 # --- Configuration ---
 OUTPUT_FILE = "/home/vitor/Projects/fiocruz/selenium-lattes/output.list"
-SEARCH_QUERY = '(oncológicos OR oncology OR anticâncer OR anticancer OR antineoplásicos OR ' \
-'antineoplastic OR anticancerígeno OR anticancer OR antineoplásicas OR antitumoral OR antitumor' \
-' OR quimioterápicos OR chemotherapy OR tumor OR neoplasm OR neoplasia) AND (câncer OR cancer ' \
-'OR neoplasm OR Leukemia OR Carcinoma OR Astrocytoma OR Astrocitoma OR Sarcoma OR Lymphoma ' \
-'or Linfoma OR cholangiocarcinoma or Colangiocarcinoma OR osteosarcoma or Osteossarcoma OR ' \
-'Histiocytoma OR fibro-histiocitoma OR ependymoma OR Ependimoma OR Medulloblastoma OR ' \
-'Meduloblastoma OR blastoma OR Hodgkin OR Non-Hodgkin OR Chordoma OR Cordoma OR adenocarcinoma ' \
-'OR Esthesioneuroblastoma OR Estesioneuroblastoma OR neuroblastoma OR Retinoblastoma OR melanoma ' \
-'OR mesothelioma OR esotelioma OR rhabdomyosarcoma OR rabdomiosarcoma OR glioblastoma)'
+SEARCH_QUERY = '(Hodgkin OR Non-Hodgkin)'
+MAX_CURRICULOS = 5
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -164,6 +157,7 @@ def main() -> None:
 
             buffer: List[str] = []
             traffic = 2
+            total_salvos = 0
 
             for j in range(numero_paginas):
                 logger.info(f"Processando página {j + 1} de {numero_paginas}...")
@@ -178,11 +172,16 @@ def main() -> None:
                             idlattes, nome = dados
                             logger.info(f"Dados extraídos com sucesso - Nome: {nome}, ID Lattes: {idlattes}")
                             buffer.append(f"{idlattes} , {nome}")
+                            total_salvos += 1
 
                             if len(buffer) >= 2:
                                 salvar_buffer(buffer, OUTPUT_FILE)
 
                         fechar_modal_se_existir(page)
+
+                        if MAX_CURRICULOS > 0 and total_salvos >= MAX_CURRICULOS:
+                            logger.info(f"Limite máximo de {MAX_CURRICULOS} currículos atingido.")
+                            break
 
                     except Exception as e:
                         logger.error(f"Erro ao processar currículo {i + 1} da página {j + 1}: {e}")
@@ -192,6 +191,9 @@ def main() -> None:
                                 aba.close()
                         fechar_modal_se_existir(page)
 
+                if MAX_CURRICULOS > 0 and total_salvos >= MAX_CURRICULOS:
+                    break
+
                 # Navega para a próxima página se não for a última
                 if j < numero_paginas - 1:
                     navegar_proxima_pagina(page, traffic)
@@ -199,7 +201,7 @@ def main() -> None:
 
             # Descarrega qualquer dado restante
             salvar_buffer(buffer, OUTPUT_FILE)
-            logger.info("Dados remanescentes salvos no arquivo.")
+            logger.info(f"Extração concluída. Total de currículos salvos: {total_salvos}")
 
         except Exception as e:
             logger.critical(f"Erro crítico durante a execução do script: {e}")
