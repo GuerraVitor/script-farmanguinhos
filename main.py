@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, Page, BrowserContext, TimeoutEr
 # --- Configuration ---
 OUTPUT_FILE = "/home/vitor/Projects/fiocruz/selenium-lattes/output.list"
 SEARCH_QUERY = '(Hodgkin OR Non-Hodgkin)'
-MAX_CURRICULOS = 5
+MAX_CURRICULOS = 2
 
 # --- Logging Setup ---
 logging.basicConfig(

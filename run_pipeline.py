@@ -15,18 +15,14 @@ def executar_comando(comando, diretorio):
 
 def main():
     # 1. Executar o bot do Selenium
-    print("\n" + "=" * 40)
     print("1. Iniciando o Bot Selenium...")
-    print("=" * 40)
 
     # ALTERAÇÃO: Usa o mesmo executável python que iniciou este script
     python_exec = sys.executable
     executar_comando(f"{python_exec} main.py", PASTA_SELENIUM)
 
     # 2. Mover o output.list
-    print("\n" + "=" * 40)
     print("2. Movendo output.list para o scriptLattes...")
-    print("=" * 40)
     origem_output = os.path.join(PASTA_SELENIUM, "output.list")
     destino_output = os.path.join(PASTA_SCRIPT_LATTES, "output.list")
 
@@ -39,22 +35,18 @@ def main():
         sys.exit(1)
 
     # 3. Executar o scriptLattes
-    print("\n" + "=" * 40)
     print("3. Executando o scriptLattes...")
-    print("=" * 40)
 
-    # Verifica o Sistema Operacional para ativar o ambiente virtual
+    # Verifica o Sistema Operacional e executa usando o Python do ambiente virtual diretamente
     if os.name == "nt":  # Windows
-        comando_lattes = r"venv\Scripts\activate && python scriptLattes.py exemplo\teste-01.config"
+        comando_lattes = r"venv\Scripts\python scriptLattes.py exemplo\teste-01.config"
     else:  # Linux / Mac
-        comando_lattes = "source venv/bin/activate && python3 scriptLattes.py exemplo/teste-01.config"
+        comando_lattes = "venv/bin/python3 scriptLattes.py exemplo/teste-01.config"
 
     # Altere o nome do arquivo .config se necessário
     executar_comando(comando_lattes, PASTA_SCRIPT_LATTES)
 
-    print("\n" + "=" * 40)
-    print("✓ Automação concluída com sucesso!")
-    print("=" * 40)
+    print("Script concluido com sucesso!")
 
 
 if __name__ == "__main__":
