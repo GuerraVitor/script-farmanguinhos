@@ -7,7 +7,15 @@ from playwright.sync_api import sync_playwright, Page, BrowserContext, TimeoutEr
 
 # --- Configuration ---
 OUTPUT_FILE = "/home/vitor/Projects/fiocruz/selenium-lattes/output.list"
-SEARCH_QUERY = '(oncológicos OR oncology OR anticâncer OR anticancer OR antineoplásicos OR antineoplastic OR anticancerígeno OR anticancer OR antineoplásicas OR antitumoral OR antitumor OR quimioterápicos OR chemotherapy OR tumor OR neoplasm OR neoplasia) AND (câncer OR cancer OR neoplasm OR Leukemia OR Carcinoma OR Astrocytoma OR Astrocitoma OR Sarcoma OR Lymphoma or Linfoma OR cholangiocarcinoma or Colangiocarcinoma OR osteosarcoma or Osteossarcoma OR Histiocytoma OR fibro-histiocitoma OR ependymoma OR Ependimoma OR Medulloblastoma OR Meduloblastoma OR blastoma OR Hodgkin OR Non-Hodgkin OR Chordoma OR Cordoma OR adenocarcinoma OR Esthesioneuroblastoma OR Estesioneuroblastoma OR neuroblastoma OR Retinoblastoma OR melanoma OR mesothelioma OR esotelioma OR rhabdomyosarcoma OR rabdomiosarcoma OR glioblastoma)'
+SEARCH_QUERY = '(oncológicos OR oncology OR anticâncer OR anticancer OR antineoplásicos OR ' \
+'antineoplastic OR anticancerígeno OR anticancer OR antineoplásicas OR antitumoral OR antitumor' \
+' OR quimioterápicos OR chemotherapy OR tumor OR neoplasm OR neoplasia) AND (câncer OR cancer ' \
+'OR neoplasm OR Leukemia OR Carcinoma OR Astrocytoma OR Astrocitoma OR Sarcoma OR Lymphoma ' \
+'or Linfoma OR cholangiocarcinoma or Colangiocarcinoma OR osteosarcoma or Osteossarcoma OR ' \
+'Histiocytoma OR fibro-histiocitoma OR ependymoma OR Ependimoma OR Medulloblastoma OR ' \
+'Meduloblastoma OR blastoma OR Hodgkin OR Non-Hodgkin OR Chordoma OR Cordoma OR adenocarcinoma ' \
+'OR Esthesioneuroblastoma OR Estesioneuroblastoma OR neuroblastoma OR Retinoblastoma OR melanoma ' \
+'OR mesothelioma OR esotelioma OR rhabdomyosarcoma OR rabdomiosarcoma OR glioblastoma)'
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -34,7 +42,7 @@ def salvar_buffer(buffer: List[str], arquivo_saida: str) -> None:
     """Salva os dados do buffer no arquivo e limpa a lista em seguida."""
     if not buffer:
         return
-    
+
     with open(arquivo_saida, "a", encoding="utf-8") as file:
         file.write("\n".join(buffer) + "\n")
     logger.debug("Buffer salvo no arquivo.")
@@ -99,7 +107,7 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
     try:
         new_page.wait_for_selector(".nome", timeout=10000)
         nome = new_page.locator(".nome").first.text_content().strip()
-        
+
         # Busca pelo ID Lattes de forma tolerante a variações estruturais
         ul_items = new_page.locator("li").all()
         idlattes = None
@@ -110,7 +118,7 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
                 if matches:
                     idlattes = matches[0]
                     break
-                    
+
         if not idlattes:
             # Fallback de segurança: busca em todo o corpo da página
             matches = re.findall(r'\d{16}', new_page.content())
