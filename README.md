@@ -1,10 +1,12 @@
-Este projeto é um bot de web scraping, criado para coletar dados públicos disponíveis no site Currículo Lattes.
+# Extrator Lattes (Selenium Lattes -> Playwright)
 
-Você pode encontrar um exemplo de output, onde obtemos os dados (ID Lattes e nome dos pesquisadores buscados, obtidos rodando o script `main.py`) e os adicionamos a um arquivo `.list`.
+Este projeto é um bot de automação web criado para coletar dados públicos disponíveis na busca textual do Currículo Lattes. Ele realiza pesquisas automatizadas, navega pela paginação de resultados, abre os currículos e extrai o ID Lattes e o nome dos pesquisadores, salvando-os em um formato de lista (`.list`).
 
-Este repositório é um clone do projeto original iniciado por Francisco Florêncio, refatorado e migrado para **Playwright** por Vitor Guerra para continuação do desenvolvimento e garantir maior estabilidade na extração.
+Este repositório é um clone do projeto original iniciado por Francisco Florêncio. O código foi totalmente refatorado e migrado do Selenium para o **Playwright** por Vitor Guerra. A transição para o Playwright garante maior velocidade, confiabilidade em esperas implícitas (waits) e robustez no tratamento de múltiplas abas durante a extração.
 
-## Instalação e Uso
+---
+
+## 🛠 Instalação
 
 1. Clone o repositório:
    ```bash
@@ -24,12 +26,51 @@ Este repositório é um clone do projeto original iniciado por Francisco Florên
    pip install -r requirements.txt
    ```
 
-4. Instale os navegadores do Playwright:
+4. Instale o navegador do Playwright necessário para o bot:
    ```bash
    playwright install chromium
    ```
 
-5. Execute o script:
-   ```bash
-   python main.py
-   ```
+---
+
+## ⚙️ Configuração (Limitando Currículos)
+
+Dentro do arquivo `main.py`, existe uma sessão de configuração logo no topo do script. Você pode modificar as seguintes variáveis:
+
+*   `SEARCH_QUERY`: A string de busca avançada que o robô irá digitar no site do Lattes.
+*   `MAX_CURRICULOS`: Define o limite máximo de currículos que você deseja extrair em uma execução (útil para testes rápidos).
+    *   *Exemplo:* `MAX_CURRICULOS = 50` salvará apenas os primeiros 50 currículos.
+    *   *Desativar limite:* Defina o valor como `0` para extrair todos os resultados encontrados pela busca.
+
+---
+
+## 🚀 Como Usar
+
+Existem duas formas principais de utilizar o projeto:
+
+### 1. Execução Simples (Apenas Extração)
+
+Se você deseja apenas gerar o arquivo `output.list` contendo os nomes e IDs extraídos, basta executar o script principal:
+
+```bash
+python main.py
+```
+O arquivo gerado será salvo no próprio diretório do projeto.
+
+### 2. Execução Integrada ao `scriptLattes` (Pipeline Completo)
+
+Se este projeto fizer parte de um ecossistema maior junto com a ferramenta [scriptLattes](https://github.com/scriptlattes/scriptlattes), você pode automatizar todo o fluxo de trabalho utilizando o **`run_pipeline.py`**.
+
+O script de pipeline executa 3 etapas automaticamente:
+1. Executa o bot extrator (`main.py`) para gerar a lista atualizada.
+2. Move o arquivo `output.list` gerado para dentro da pasta do projeto vizinho (`../scriptLattes`).
+3. Invoca o executável Python do ambiente virtual do `scriptLattes` para gerar os relatórios, contornando problemas comuns de ativação do `venv`.
+
+**Pré-requisitos da Integração:**
+* O diretório do `scriptLattes` deve estar no mesmo nível hierárquico (lado a lado) da pasta `selenium-lattes`.
+* O `scriptLattes` já deve possuir o seu próprio ambiente virtual (`venv`) configurado com suas dependências instaladas.
+
+**Executando o Pipeline:**
+```bash
+python run_pipeline.py
+```
