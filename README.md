@@ -1,8 +1,8 @@
-# Extrator Lattes (Selenium Lattes -> Playwright)
+# Extrator Lattes (Playwright)
 
 Este projeto é um bot de automação web criado para coletar dados públicos disponíveis na busca textual do Currículo Lattes. Ele realiza pesquisas automatizadas, navega pela paginação de resultados, abre os currículos e extrai o ID Lattes e o nome dos pesquisadores, salvando-os em um formato de lista (`.list`).
 
-Este repositório é um clone do projeto original iniciado por Francisco Florêncio. O código foi totalmente refatorado e migrado do Selenium para o **Playwright** por Vitor Guerra. A transição para o Playwright garante maior velocidade, confiabilidade em esperas implícitas (waits) e robustez no tratamento de múltiplas abas durante a extração.
+Este repositório é um clone do projeto original iniciado por Francisco Florêncio. O código foi totalmente refatorado e migrado para o **Playwright** por Vitor Guerra. A transição para o Playwright garante maior velocidade, confiabilidade em esperas implícitas (waits) e robustez no tratamento de múltiplas abas durante a extração.
 
 ---
 
@@ -11,7 +11,7 @@ Este repositório é um clone do projeto original iniciado por Francisco Florên
 1. Clone o repositório:
    ```bash
    git clone <url-do-repositorio>
-   cd selenium-lattes
+   cd <nome-do-repositorio>
    ```
 
 2. Configure um ambiente virtual Python:
@@ -67,7 +67,7 @@ O script de pipeline executa 3 etapas automaticamente:
 3. Invoca o executável Python do ambiente virtual do `scriptLattes` para gerar os relatórios, contornando problemas comuns de ativação do `venv`.
 
 **Pré-requisitos da Integração:**
-* O diretório do `scriptLattes` deve estar no mesmo nível hierárquico (lado a lado) da pasta `selenium-lattes`.
+* O diretório do `scriptLattes` deve estar no mesmo nível hierárquico (lado a lado) da pasta deste projeto.
 * O `scriptLattes` já deve possuir o seu próprio ambiente virtual (`venv`) configurado com suas dependências instaladas.
 
 **Executando o Pipeline:**

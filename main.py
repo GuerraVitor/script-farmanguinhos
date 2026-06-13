@@ -3,12 +3,13 @@ import math
 import re
 import time
 from typing import List, Optional, Tuple
-from playwright.sync_api import sync_playwright, Page, BrowserContext, TimeoutError as PlaywrightTimeoutError
+import os
+from playwright.sync_api import sync_playwright, Page, BrowserContext,TimeoutError as PlaywrightTimeoutError
 
 # --- Configuration ---
-OUTPUT_FILE = "/home/vitor/Projects/fiocruz/selenium-lattes/output.list"
-SEARCH_QUERY = '(Hodgkin OR Non-Hodgkin)'
-MAX_CURRICULOS = 2
+OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.list")
+SEARCH_QUERY = '(Farmanguinhos)'
+MAX_CURRICULOS = 20
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -43,7 +44,6 @@ def salvar_buffer(buffer: List[str], arquivo_saida: str) -> None:
 
 
 def executar_busca_inicial(page: Page, query: str) -> None:
-    """Navega até o Busca Lattes, preenche a busca avançada e envia o formulário."""
     logger.info("Acessando o Busca Lattes...")
     page.goto("https://buscatextual.cnpq.br/buscatextual/busca.do")
 

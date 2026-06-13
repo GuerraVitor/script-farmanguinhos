@@ -3,8 +3,8 @@ import shutil
 import subprocess
 import sys
 
-PASTA_SELENIUM = os.path.dirname(os.path.abspath(__file__))
-PASTA_SCRIPT_LATTES = os.path.abspath(os.path.join(PASTA_SELENIUM, "..", "scriptLattes"))
+PASTA_EXTRATOR = os.path.dirname(os.path.abspath(__file__))
+PASTA_SCRIPT_LATTES = os.path.abspath(os.path.join(PASTA_EXTRATOR, "..", "scriptLattes"))
 
 def executar_comando(comando, diretorio):
     print(f"Executando: {comando} em {diretorio}")
@@ -14,16 +14,16 @@ def executar_comando(comando, diretorio):
         sys.exit(1)
 
 def main():
-    # 1. Executar o bot do Selenium
-    print("1. Iniciando o Bot Selenium...")
+    # 1. Executar o bot extrator
+    print("1. Iniciando o Bot Extrator...")
 
     # ALTERAÇÃO: Usa o mesmo executável python que iniciou este script
     python_exec = sys.executable
-    executar_comando(f"{python_exec} main.py", PASTA_SELENIUM)
+    executar_comando(f"{python_exec} main.py", PASTA_EXTRATOR)
 
     # 2. Mover o output.list
     print("2. Movendo output.list para o scriptLattes...")
-    origem_output = os.path.join(PASTA_SELENIUM, "output.list")
+    origem_output = os.path.join(PASTA_EXTRATOR, "output.list")
     destino_output = os.path.join(PASTA_SCRIPT_LATTES, "output.list")
 
     if os.path.exists(origem_output):
@@ -51,3 +51,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+()
