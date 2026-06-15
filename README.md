@@ -11,7 +11,7 @@ This project performs automated searches, handles result pagination, opens resum
 
 Originally created by Francisco Florêncio, this codebase has been refactored and migrated from Selenium to Playwright by Vitor Guerra. This transition ensures faster execution, better implicit wait handling, and more robust cross-tab management.
 
-## ✨ Features
+## Features
 - **Automated Searching:** Directly interfaces with the advanced search field of the CNPq Lattes platform.
 - **Robust Extraction:** Capable of handling pop-ups and multiple browser tabs seamlessly using Playwright.
 - **Data Export:** Outputs a structured `output.list` file ready for ingestion by downstream processing tools.
@@ -51,7 +51,7 @@ In the `main.py` file, there is a configuration section at the top. You can adju
   - *Example:* `MAX_CURRICULOS = 50`
   - *Disable limit:* Set to `0` to extract all found results.
 
-## 🚀 Usage
+## Usage
 
 There are two primary ways to run this project:
 
@@ -133,7 +133,7 @@ Dentro do arquivo `main.py`, existe uma sessão de configuração logo no topo d
   - *Exemplo:* `MAX_CURRICULOS = 50`
   - *Desativar limite:* Defina o valor como `0` para extrair todos os resultados encontrados pela busca.
 
-## 🚀 Como Usar
+## Como Usar
 
 Existem duas formas principais de utilizar o projeto:
 
