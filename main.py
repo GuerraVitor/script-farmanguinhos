@@ -197,17 +197,17 @@ def calculate_total_pages(page: Page) -> int:
     """
     numero_element = page.locator("div.tit_form b").first
     total_text = numero_element.text_content()
-    
+
     if not total_text:
         logger.warning("Não foi possível encontrar o total de currículos. Retornando 1 página.")
         return 1
-        
+
     total_curriculos = int(total_text)
     numero_paginas = math.ceil(total_curriculos / 10)
-    
+
     logger.info(f"Total de currículos encontrados: {total_curriculos}")
     logger.info(f"Total de páginas a processar: {numero_paginas}")
-    
+
     return numero_paginas
 
 
@@ -215,7 +215,7 @@ def run_extraction_pipeline() -> None:
     """
     Runs the complete extraction pipeline.
     """
-    logger.info("Iniciando o script de extração (Script Lattes).")
+    logger.info("Iniciando o script de extração.")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
@@ -225,7 +225,7 @@ def run_extraction_pipeline() -> None:
         try:
             execute_initial_search(page, SEARCH_QUERY)
             time.sleep(2)
-            
+
             total_pages = calculate_total_pages(page)
 
             buffer: List[str] = []
@@ -276,7 +276,7 @@ def run_extraction_pipeline() -> None:
         except Exception as e:
             logger.critical(f"Erro crítico durante a execução do script: {e}")
         finally:
-            logger.info("Encerrando o Playwright...")
+            logger.info("Encerrando o Playwright")
             time.sleep(2)
             context.close()
             browser.close()
