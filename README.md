@@ -5,11 +5,11 @@
 
 *Looking for the Portuguese version? [Click here to read in Portuguese](#extrator-lattes-bot-). / Procurando a versão em Português? [Clique aqui](#extrator-lattes-bot-).*
 
-A web automation bot built with **Python** and **Playwright** designed to collect public data from the [Currículo Lattes](http://buscatextual.cnpq.br/buscatextual/busca.do) textual search. 
+A web automation bot built with **Python** and **Playwright** designed to collect public data from the [Currículo Lattes](http://buscatextual.cnpq.br/buscatextual/busca.do) textual search.
 
-This project performs automated searches, handles result pagination, opens resumes, and extracts the 16-digit Lattes ID and the researcher's name, saving the output in a clean `.list` format. 
+This project performs automated searches, handles result pagination, opens resumes, and extracts the 16-digit Lattes ID and the researcher's name, saving the output in a clean `.list` format.
 
-Originally created by Francisco Florêncio, this codebase has been completely refactored and migrated from Selenium to Playwright by Vitor Guerra. This transition ensures faster execution, better implicit wait handling, and more robust cross-tab management.
+Originally created by Francisco Florêncio, this codebase has been refactored and migrated from Selenium to Playwright by Vitor Guerra. This transition ensures faster execution, better implicit wait handling, and more robust cross-tab management.
 
 ## ✨ Features
 - **Automated Searching:** Directly interfaces with the advanced search field of the CNPq Lattes platform.
