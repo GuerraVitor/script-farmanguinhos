@@ -42,21 +42,21 @@ def salvar_buffer(buffer: List[str], arquivo_saida: str) -> None:
 
 
 def executar_busca_inicial(page: Page, query: str) -> None:
-    logger.info("Acessando o Busca Lattes...")
+    logger.info("Acessando o Busca Lattes")
     page.goto("https://buscatextual.cnpq.br/buscatextual/busca.do")
 
-    logger.info("Navegando para a busca avançada...")
+    logger.info("Navegando para a busca avançada")
     page.locator("div#tit_simples.control-bar-top a").click()
 
-    logger.info("Preenchendo o campo de busca...")
+    logger.info("Preenchendo o campo de busca")
     input_element = page.locator("textarea.input-text.min-height")
     input_element.clear()
     input_element.fill(query)
 
-    logger.info("Executando a busca...")
+    logger.info("Executando a busca")
     page.locator("a#botaoBuscaFiltros.button").click()
 
-    logger.info("Aguardando carregamento dos resultados...")
+    logger.info("Aguardando carregamento dos resultados")
     page.wait_for_selector("div.resultado", timeout=10000)
 
 
