@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 def fechar_modal_se_existir(page: Page) -> None:
-    """Verifica se há um modal aberto na página principal e o fecha."""
     try:
         close_btn = page.locator("#idbtnfechar")
         if close_btn.is_visible():
@@ -33,7 +32,6 @@ def fechar_modal_se_existir(page: Page) -> None:
 
 
 def salvar_buffer(buffer: List[str], arquivo_saida: str) -> None:
-    """Salva os dados do buffer no arquivo e limpa a lista em seguida."""
     if not buffer:
         return
 
@@ -63,8 +61,6 @@ def executar_busca_inicial(page: Page, query: str) -> None:
 
 
 def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: int) -> Optional[Tuple[str, str]]:
-    """Abre o currículo baseado no índice da lista, extrai Nome e ID Lattes, e fecha a aba."""
-    # Re-localiza os elementos a cada iteração para evitar 'staleness'
     resultado_div = main_page.locator("div.resultado")
     lista = resultado_div.locator("li")
     link = lista.nth(indice).locator("a").first
@@ -72,7 +68,6 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
     link.scroll_into_view_if_needed()
     time.sleep(0.5)
 
-    # Evita que eventos nativos bloqueiem o clique (ex: header sobrepondo elemento)
     link.evaluate("node => node.click()")
 
     curriculo_btn = main_page.locator("#idbtnabrircurriculo")
@@ -82,7 +77,6 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
     new_page = None
     window_opened = False
 
-    # Tenta clicar no botão e aguarda a nova aba abrir
     for attempt in range(4):
         try:
             with context.expect_page(timeout=4000) as new_page_info:
@@ -101,7 +95,6 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
         new_page.wait_for_selector(".nome", timeout=10000)
         nome = new_page.locator(".nome").first.text_content().strip()
 
-        # Busca pelo ID Lattes de forma tolerante a variações estruturais
         ul_items = new_page.locator("li").all()
         idlattes = None
         for item in ul_items:
@@ -113,18 +106,15 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
                     break
 
         if not idlattes:
-            # Fallback de segurança: busca em todo o corpo da página
             matches = re.findall(r'\d{16}', new_page.content())
             idlattes = matches[0] if matches else "ID_NAO_ENCONTRADO"
 
         return idlattes, nome
     finally:
-        # Garante que a aba do currículo sempre seja fechada
         new_page.close()
 
 
 def navegar_proxima_pagina(page: Page, traffic_index: int) -> None:
-    """Encontra e clica no link numérico correto para a próxima página."""
     if traffic_index % 10 == 0:
         page_link = page.get_by_role("link", name="próximo").first
     else:
@@ -185,7 +175,6 @@ def main() -> None:
 
                     except Exception as e:
                         logger.error(f"Erro ao processar currículo {i + 1} da página {j + 1}: {e}")
-                        # Recuperação: Fecha qualquer aba que tenha ficado órfã por causa do erro
                         for aba in context.pages:
                             if aba != page:
                                 aba.close()
@@ -194,12 +183,10 @@ def main() -> None:
                 if MAX_CURRICULOS > 0 and total_salvos >= MAX_CURRICULOS:
                     break
 
-                # Navega para a próxima página se não for a última
                 if j < numero_paginas - 1:
                     navegar_proxima_pagina(page, traffic)
                     traffic += 1
 
-            # Descarrega qualquer dado restante
             salvar_buffer(buffer, OUTPUT_FILE)
             logger.info(f"Extração concluída. Total de currículos salvos: {total_salvos}")
 
