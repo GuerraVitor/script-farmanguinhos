@@ -5,31 +5,45 @@
 
 *Looking for the Portuguese version? [Click here to read in Portuguese](#extrator-lattes-bot-). / Procurando a versão em Português? [Clique aqui](#extrator-lattes-bot-).*
 
-A web automation bot built with **Python** and **Playwright** designed to collect public data from the [Currículo Lattes](http://buscatextual.cnpq.br/buscatextual/busca.do) textual search.
+A web automation tool built with **Python** and **Playwright**, designed to securely and efficiently collect public data from the [Currículo Lattes](http://buscatextual.cnpq.br/buscatextual/busca.do) advanced search.
 
-This project performs automated searches, handles result pagination, opens resumes, and extracts the 16-digit Lattes ID and the researcher's name, saving the output in a clean `.list` format.
+This application acts as a specialized data pipeline to automatically generate the `.list` input files required by the [scriptLattes](https://github.com/scriptlattes/scriptlattes) ecosystem. By utilizing Playwright, it offers high-speed execution, resilient DOM element waiting, and reliable multi-tab handling.
 
-Originally created by Francisco Florêncio, this codebase has been refactored and migrated from Selenium to Playwright by Vitor Guerra. This transition ensures faster execution, better implicit wait handling, and more robust cross-tab management.
+## 📑 Table of Contents
+1. [Features](#features)
+2. [Architecture & Workflow](#architecture--workflow)
+3. [Installation](#installation)
+4. [Configuration](#configuration)
+5. [Usage](#usage)
+6. [Pipeline Integration](#pipeline-integration)
 
-## Features
-- **Automated Searching:** Directly interfaces with the advanced search field of the CNPq Lattes platform.
-- **Robust Extraction:** Capable of handling pop-ups and multiple browser tabs seamlessly using Playwright.
-- **Data Export:** Outputs a structured `output.list` file ready for ingestion by downstream processing tools.
-- **Pipeline Integration:** Native support for piping data directly into the [scriptLattes](https://github.com/scriptlattes/scriptlattes) ecosystem.
+## ✨ Features
+- **Automated Searching:** Directly interfaces with the advanced search form on the CNPq Lattes platform.
+- **Resilient Extraction:** Gracefully handles unexpected pop-ups, network delays, and complex tab management natively via Playwright.
+- **Structured Export:** Generates clean, formatted `output.list` files consisting of the 16-digit Lattes ID and the researcher's name.
+- **Pipeline Ready:** Includes a `run_pipeline.py` script to automatically execute the extraction and trigger `scriptLattes` in a single run.
+
+## 🏗️ Architecture & Workflow
+The extractor interacts with the Lattes platform iteratively:
+1. Accesses the Advanced Search interface and inputs the configured `SEARCH_QUERY`.
+2. Calculates the total number of pages and iterates through the paginated results.
+3. Opens individual researcher CVs in temporary tabs.
+4. Parses the DOM or source code to reliably locate the 16-digit ID and name.
+5. Buffers and flushes the data asynchronously into `output.list`.
 
 ## 🛠️ Installation
 
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd <repository-folder-name>
+   cd lattes-extractor
    ```
 
 2. **Set up a virtual environment:**
    ```bash
-   python3 -m venv venv
+   python -m venv venv
    source venv/bin/activate  # Linux/macOS
-   # or: venv\Scripts\activate on Windows
+   # Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies:**
@@ -44,42 +58,32 @@ Originally created by Francisco Florêncio, this codebase has been refactored an
 
 ## ⚙️ Configuration
 
-In the `main.py` file, there is a configuration section at the top. You can adjust the following parameters:
+Open `main.py` and adjust the variables in the `# --- Configuration ---` section to suit your needs:
 
-- `SEARCH_QUERY`: The exact search string the bot will input into the Lattes advanced search.
-- `MAX_CURRICULOS`: The maximum number of resumes you want to extract per execution (useful for testing).
-  - *Example:* `MAX_CURRICULOS = 50`
-  - *Disable limit:* Set to `0` to extract all found results.
+- `SEARCH_QUERY`: The exact search query string to be used.
+- `MAX_CURRICULOS`: The maximum number of CVs to extract per run (e.g., `MAX_CURRICULOS = 50`). Set to `0` for unlimited extraction.
 
-## Usage
+## 🚀 Usage
 
-There are two primary ways to run this project:
-
-### 1. Standalone Execution (Extraction Only)
-To simply generate the `output.list` containing the extracted names and Lattes IDs, run the main script:
+### 1. Standalone Execution
+Run the extractor independently to simply generate an `output.list` file in the current directory:
 ```bash
 python main.py
 ```
-The file will be saved in the root directory of the project.
 
-### 2. Integrated Pipeline (`scriptLattes`)
-If this project is part of a larger workflow utilizing [scriptLattes](https://github.com/scriptlattes/scriptlattes), you can automate the entire pipeline using `run_pipeline.py`.
+### 2. Pipeline Integration (`scriptLattes`)
+This tool is built to seamlessly feed data into `scriptLattes`.
 
-The pipeline script automatically:
-1. Runs the extractor bot (`main.py`) to generate the updated list.
-2. Moves the `output.list` file into the neighboring `scriptLattes` folder.
-3. Invokes the `scriptLattes` virtual environment to generate its reports.
-
-**Prerequisites for Pipeline Integration:**
-- The `scriptLattes` directory must be in the same parent folder as this project (side-by-side).
-- The `scriptLattes` folder must have its own configured virtual environment (`venv`) with all its dependencies installed.
+**Prerequisites:**
+- The `scriptLattes` repository must be cloned in the same parent directory (side-by-side with this extractor).
+- The `scriptLattes` project must have its own virtual environment (`venv`) fully configured and dependencies installed.
 
 **Run the pipeline:**
 ```bash
 python run_pipeline.py
 ```
+This script will automatically run the extractor, move the resulting `output.list` into the `scriptLattes` folder, and trigger the `scriptLattes` reporting engine.
 
----
 ---
 
 # Extrator Lattes (Bot) 🤖🎓
@@ -87,31 +91,45 @@ python run_pipeline.py
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![Playwright](https://img.shields.io/badge/Playwright-Automatizado-2EAD33.svg)](https://playwright.dev/python/)
 
-Um bot de automação web construído com **Python** e **Playwright** projetado para coletar dados públicos na busca textual do [Currículo Lattes](http://buscatextual.cnpq.br/buscatextual/busca.do).
+Uma ferramenta robusta de automação web construída com **Python** e **Playwright**, projetada para coletar de forma segura e eficiente dados públicos da busca avançada do [Currículo Lattes](http://buscatextual.cnpq.br/buscatextual/busca.do).
 
-Este projeto realiza pesquisas automatizadas, navega pela paginação de resultados, abre os currículos e extrai o ID Lattes (16 dígitos) e o nome dos pesquisadores, salvando a saída em um formato limpo de `.list`.
+Esta aplicação atua como um pipeline de dados especializado para gerar automaticamente os arquivos `.list` de entrada necessários para o ecossistema [scriptLattes](https://github.com/scriptlattes/scriptlattes). Utilizando Playwright, oferece execução de alta velocidade, tratamento resiliente de elementos do DOM e gerenciamento confiável de múltiplas abas.
 
-Originalmente criado por Francisco Florêncio, este código-fonte foi totalmente refatorado e migrado do Selenium para o Playwright por Vitor Guerra. A transição garante execução mais rápida, melhor manipulação de esperas (waits) e gerenciamento mais robusto de abas no navegador.
+## 📑 Índice
+1. [Funcionalidades](#-funcionalidades)
+2. [Arquitetura e Fluxo de Trabalho](#%EF%B8%8F-arquitetura-e-fluxo-de-trabalho)
+3. [Instalação](#%EF%B8%8F-instalação)
+4. [Configuração](#%EF%B8%8F-configuração)
+5. [Como Usar](#-como-usar)
+6. [Integração via Pipeline](#2-execução-integrada-ao-scriptlattes-pipeline)
 
 ## ✨ Funcionalidades
-- **Busca Automatizada:** Interage diretamente com o campo de busca avançada da plataforma Lattes (CNPq).
-- **Extração Robusta:** Capaz de lidar com modais (pop-ups) e múltiplas abas de navegador de forma nativa e fluida com Playwright.
-- **Exportação de Dados:** Gera um arquivo `output.list` estruturado, pronto para consumo por outras ferramentas.
-- **Integração via Pipeline:** Suporte nativo para enviar os dados diretamente para o ecossistema [scriptLattes](https://github.com/scriptlattes/scriptlattes).
+- **Busca Automatizada:** Interage de forma autônoma com o formulário de busca avançada do CNPq.
+- **Extração Resiliente:** Lida de forma robusta com pop-ups inesperados, atrasos de rede e gerenciamento complexo de abas via Playwright.
+- **Exportação Estruturada:** Gera arquivos `output.list` limpos e formatados, contendo o ID Lattes (16 dígitos) e o nome do pesquisador.
+- **Pronto para Pipeline:** Inclui um script `run_pipeline.py` para executar a extração e acionar o `scriptLattes` automaticamente em uma única execução.
+
+## 🏗️ Arquitetura e Fluxo de Trabalho
+O extrator interage com a plataforma Lattes de forma iterativa:
+1. Acessa a interface de Busca Avançada e insere a `SEARCH_QUERY` configurada.
+2. Calcula o número total de páginas e itera pelos resultados paginados.
+3. Abre os currículos individuais dos pesquisadores em abas temporárias.
+4. Analisa o DOM ou código-fonte para localizar de forma confiável o ID de 16 dígitos e o nome.
+5. Armazena em buffer e grava os dados no arquivo `output.list`.
 
 ## 🛠️ Instalação
 
 1. **Clone o repositório:**
    ```bash
    git clone <url-do-repositorio>
-   cd <nome-da-pasta-do-repositorio>
+   cd lattes-extractor
    ```
 
-2. **Configure um ambiente virtual Python:**
+2. **Configure um ambiente virtual:**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # No Linux/macOS
-   # ou: venv\Scripts\activate no Windows
+   python -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   # Windows: venv\Scripts\activate
    ```
 
 3. **Instale as dependências:**
@@ -126,37 +144,28 @@ Originalmente criado por Francisco Florêncio, este código-fonte foi totalmente
 
 ## ⚙️ Configuração
 
-Dentro do arquivo `main.py`, existe uma sessão de configuração logo no topo do script. Você pode modificar as seguintes variáveis:
+Abra o arquivo `main.py` e ajuste as variáveis na seção `# --- Configuration ---` para atender às suas necessidades:
 
-- `SEARCH_QUERY`: A string de busca exata que o robô irá digitar no site do Lattes.
-- `MAX_CURRICULOS`: O limite máximo de currículos que você deseja extrair em uma execução (útil para testes rápidos).
-  - *Exemplo:* `MAX_CURRICULOS = 50`
-  - *Desativar limite:* Defina o valor como `0` para extrair todos os resultados encontrados pela busca.
+- `SEARCH_QUERY`: A string de busca exata a ser utilizada na pesquisa.
+- `MAX_CURRICULOS`: O número máximo de currículos a serem extraídos por execução (ex: `MAX_CURRICULOS = 50`). Defina como `0` para extração ilimitada.
 
-## Como Usar
-
-Existem duas formas principais de utilizar o projeto:
+## 🚀 Como Usar
 
 ### 1. Execução Simples (Apenas Extração)
-Se você deseja apenas gerar o arquivo `output.list` contendo os nomes e IDs extraídos, basta executar o script principal:
+Execute o extrator de forma independente para gerar apenas o arquivo `output.list` no diretório atual:
 ```bash
 python main.py
 ```
-O arquivo gerado será salvo no próprio diretório do projeto.
 
-### 2. Execução Integrada ao `scriptLattes` (Pipeline Completo)
-Se este projeto fizer parte de um ecossistema maior junto com a ferramenta [scriptLattes](https://github.com/scriptlattes/scriptlattes), você pode automatizar todo o fluxo de trabalho utilizando o script `run_pipeline.py`.
+### 2. Execução Integrada ao `scriptLattes` (Pipeline)
+Esta ferramenta foi desenvolvida para alimentar dados de forma fluida para o `scriptLattes`.
 
-O script de pipeline executa as seguintes etapas automaticamente:
-1. Executa o bot extrator (`main.py`) para gerar a lista atualizada.
-2. Move o arquivo `output.list` gerado para dentro da pasta do projeto vizinho (`../scriptLattes`).
-3. Invoca o ambiente virtual do `scriptLattes` para gerar os relatórios.
+**Pré-requisitos:**
+- O repositório `scriptLattes` deve estar clonado no mesmo diretório pai (lado a lado com este extrator).
+- O projeto `scriptLattes` deve possuir seu próprio ambiente virtual (`venv`) configurado com todas as dependências instaladas.
 
-**Pré-requisitos da Integração via Pipeline:**
-- O diretório do `scriptLattes` deve estar no mesmo nível hierárquico (lado a lado) da pasta deste projeto.
-- O projeto `scriptLattes` já deve possuir o seu próprio ambiente virtual (`venv`) configurado com suas dependências instaladas.
-
-**Executando o Pipeline:**
+**Executando o pipeline:**
 ```bash
 python run_pipeline.py
 ```
+Este script executará automaticamente o extrator, moverá o arquivo `output.list` resultante para a pasta do `scriptLattes` e iniciará o motor de relatórios do `scriptLattes`.

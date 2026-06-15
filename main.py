@@ -1,47 +1,83 @@
+"""
+Main module for the Script Lattes data extractor.
+
+This script automates the extraction of researchers' CV data from the
+CNPq Lattes Platform using Playwright.
+"""
+
 import logging
 import math
+import os
 import re
 import time
 from typing import List, Optional, Tuple
-import os
-from playwright.sync_api import sync_playwright, Page, BrowserContext,TimeoutError as PlaywrightTimeoutError
+
+from playwright.sync_api import (
+    BrowserContext,
+    Page,
+    sync_playwright,
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 # --- Configuration ---
 OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.list")
-SEARCH_QUERY = '(Farmanguinhos)'
+SEARCH_QUERY = "(Farmanguinhos)"
 MAX_CURRICULOS = 20
 
 # --- Logging Setup ---
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
 
-def fechar_modal_se_existir(page: Page) -> None:
+def close_modal_if_exists(page: Page) -> None:
+    """
+    Closes the current modal on the page if it is visible.
+
+    Args:
+        page (Page): The current Playwright page instance.
+    """
     try:
         close_btn = page.locator("#idbtnfechar")
         if close_btn.is_visible():
             close_btn.evaluate("node => node.click()")
             close_btn.wait_for(state="hidden", timeout=3000)
             logger.debug("Modal fechado com sucesso.")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Erro ao fechar modal ou modal não encontrado: {e}")
 
 
-def salvar_buffer(buffer: List[str], arquivo_saida: str) -> None:
+def save_buffer(buffer: List[str], output_file: str) -> None:
+    """
+    Saves the extracted Lattes IDs and names to the output file.
+
+    Args:
+        buffer (List[str]): List of strings containing formatted Lattes data.
+        output_file (str): The path to the output file.
+    """
     if not buffer:
         return
 
-    with open(arquivo_saida, "a", encoding="utf-8") as file:
-        file.write("\n".join(buffer) + "\n")
-    logger.debug("Buffer salvo no arquivo.")
-    buffer.clear()
+    try:
+        with open(output_file, "a", encoding="utf-8") as file:
+            file.write("\n".join(buffer) + "\n")
+        logger.debug("Buffer salvo no arquivo.")
+        buffer.clear()
+    except IOError as e:
+        logger.error(f"Erro ao salvar buffer no arquivo: {e}")
 
 
-def executar_busca_inicial(page: Page, query: str) -> None:
+def execute_initial_search(page: Page, query: str) -> None:
+    """
+    Navigates to the CNPq Lattes search page and performs the initial search.
+
+    Args:
+        page (Page): The Playwright page instance.
+        query (str): The search query to be used.
+    """
     logger.info("Acessando o Busca Lattes")
     page.goto("https://buscatextual.cnpq.br/buscatextual/busca.do")
 
@@ -60,10 +96,24 @@ def executar_busca_inicial(page: Page, query: str) -> None:
     page.wait_for_selector("div.resultado", timeout=10000)
 
 
-def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: int) -> Optional[Tuple[str, str]]:
+def extract_curriculum_data(
+    context: BrowserContext, main_page: Page, index: int
+) -> Optional[Tuple[str, str]]:
+    """
+    Extracts the Lattes ID and name of a researcher from the search results.
+
+    Args:
+        context (BrowserContext): The Playwright browser context.
+        main_page (Page): The main search results page.
+        index (int): The index of the curriculum item in the results list.
+
+    Returns:
+        Optional[Tuple[str, str]]: A tuple containing the Lattes ID and Name,
+        or None if extraction fails.
+    """
     resultado_div = main_page.locator("div.resultado")
     lista = resultado_div.locator("li")
-    link = lista.nth(indice).locator("a").first
+    link = lista.nth(index).locator("a").first
 
     link.scroll_into_view_if_needed()
     time.sleep(0.5)
@@ -93,28 +143,37 @@ def extrair_dados_curriculo(context: BrowserContext, main_page: Page, indice: in
 
     try:
         new_page.wait_for_selector(".nome", timeout=10000)
-        nome = new_page.locator(".nome").first.text_content().strip()
+        nome = new_page.locator(".nome").first.text_content()
+        nome = nome.strip() if nome else "NOME_NAO_ENCONTRADO"
 
         ul_items = new_page.locator("li").all()
-        idlattes = None
+        lattes_id = None
         for item in ul_items:
-            text = item.text_content()
+            text = item.text_content() or ""
             if "Endereço para acessar este CV:" in text:
-                matches = re.findall(r'\d{16}', text)
+                matches = re.findall(r"\d{16}", text)
                 if matches:
-                    idlattes = matches[0]
+                    lattes_id = matches[0]
                     break
 
-        if not idlattes:
-            matches = re.findall(r'\d{16}', new_page.content())
-            idlattes = matches[0] if matches else "ID_NAO_ENCONTRADO"
+        if not lattes_id:
+            content = new_page.content()
+            matches = re.findall(r"\d{16}", content)
+            lattes_id = matches[0] if matches else "ID_NAO_ENCONTRADO"
 
-        return idlattes, nome
+        return lattes_id, nome
     finally:
         new_page.close()
 
 
-def navegar_proxima_pagina(page: Page, traffic_index: int) -> None:
+def navigate_to_next_page(page: Page, traffic_index: int) -> None:
+    """
+    Navigates to the next page of search results.
+
+    Args:
+        page (Page): The Playwright page instance.
+        traffic_index (int): The current pagination index for locating the next button.
+    """
     if traffic_index % 10 == 0:
         page_link = page.get_by_role("link", name="próximo").first
     else:
@@ -126,8 +185,37 @@ def navegar_proxima_pagina(page: Page, traffic_index: int) -> None:
     time.sleep(3)
 
 
-def main() -> None:
-    logger.info("Iniciando o script de extração do Lattes.")
+def calculate_total_pages(page: Page) -> int:
+    """
+    Calculates the total number of pages based on the search results.
+
+    Args:
+        page (Page): The Playwright page instance.
+
+    Returns:
+        int: The total number of pages to process.
+    """
+    numero_element = page.locator("div.tit_form b").first
+    total_text = numero_element.text_content()
+    
+    if not total_text:
+        logger.warning("Não foi possível encontrar o total de currículos. Retornando 1 página.")
+        return 1
+        
+    total_curriculos = int(total_text)
+    numero_paginas = math.ceil(total_curriculos / 10)
+    
+    logger.info(f"Total de currículos encontrados: {total_curriculos}")
+    logger.info(f"Total de páginas a processar: {numero_paginas}")
+    
+    return numero_paginas
+
+
+def run_extraction_pipeline() -> None:
+    """
+    Runs the complete extraction pipeline.
+    """
+    logger.info("Iniciando o script de extração (Script Lattes).")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
@@ -135,69 +223,69 @@ def main() -> None:
         page = context.new_page()
 
         try:
-            executar_busca_inicial(page, SEARCH_QUERY)
-
+            execute_initial_search(page, SEARCH_QUERY)
             time.sleep(2)
-            numero_element = page.locator("div.tit_form b").first
-            total_curriculos = int(numero_element.text_content())
-            numero_paginas = math.ceil(total_curriculos / 10)
-
-            logger.info(f"Total de currículos encontrados: {total_curriculos}")
-            logger.info(f"Total de páginas a processar: {numero_paginas}")
+            
+            total_pages = calculate_total_pages(page)
 
             buffer: List[str] = []
-            traffic = 2
-            total_salvos = 0
+            traffic_index = 2
+            total_saved = 0
 
-            for j in range(numero_paginas):
-                logger.info(f"Processando página {j + 1} de {numero_paginas}...")
+            for page_index in range(total_pages):
+                logger.info(f"Processando página {page_index + 1} de {total_pages}...")
 
                 resultado_div = page.locator("div.resultado")
-                quantidade_items = resultado_div.locator("li").count()
+                items_count = resultado_div.locator("li").count()
 
-                for i in range(quantidade_items):
+                for item_index in range(items_count):
                     try:
-                        dados = extrair_dados_curriculo(context, page, i)
+                        dados = extract_curriculum_data(context, page, item_index)
                         if dados:
-                            idlattes, nome = dados
-                            logger.info(f"Dados extraídos com sucesso - Nome: {nome}, ID Lattes: {idlattes}")
-                            buffer.append(f"{idlattes} , {nome}")
-                            total_salvos += 1
+                            lattes_id, nome = dados
+                            logger.info(f"Dados extraídos com sucesso - Nome: {nome}, ID Lattes: {lattes_id}")
+                            buffer.append(f"{lattes_id} , {nome}")
+                            total_saved += 1
 
                             if len(buffer) >= 2:
-                                salvar_buffer(buffer, OUTPUT_FILE)
+                                save_buffer(buffer, OUTPUT_FILE)
 
-                        fechar_modal_se_existir(page)
+                        close_modal_if_exists(page)
 
-                        if MAX_CURRICULOS > 0 and total_salvos >= MAX_CURRICULOS:
+                        if MAX_CURRICULOS > 0 and total_saved >= MAX_CURRICULOS:
                             logger.info(f"Limite máximo de {MAX_CURRICULOS} currículos atingido.")
                             break
 
                     except Exception as e:
-                        logger.error(f"Erro ao processar currículo {i + 1} da página {j + 1}: {e}")
+                        logger.error(f"Erro ao processar currículo {item_index + 1} da página {page_index + 1}: {e}")
                         for aba in context.pages:
                             if aba != page:
                                 aba.close()
-                        fechar_modal_se_existir(page)
+                        close_modal_if_exists(page)
 
-                if MAX_CURRICULOS > 0 and total_salvos >= MAX_CURRICULOS:
+                if MAX_CURRICULOS > 0 and total_saved >= MAX_CURRICULOS:
                     break
 
-                if j < numero_paginas - 1:
-                    navegar_proxima_pagina(page, traffic)
-                    traffic += 1
+                if page_index < total_pages - 1:
+                    navigate_to_next_page(page, traffic_index)
+                    traffic_index += 1
 
-            salvar_buffer(buffer, OUTPUT_FILE)
-            logger.info(f"Extração concluída. Total de currículos salvos: {total_salvos}")
+            save_buffer(buffer, OUTPUT_FILE)
+            logger.info(f"Extração concluída. Total de currículos salvos: {total_saved}")
 
         except Exception as e:
             logger.critical(f"Erro crítico durante a execução do script: {e}")
         finally:
-            logger.info("Encerrando o WebDriver...")
+            logger.info("Encerrando o Playwright...")
             time.sleep(2)
             context.close()
             browser.close()
             logger.info("Script finalizado.")
+
+
+def main() -> None:
+    """Entry point of the script."""
+    run_extraction_pipeline()
 
 
 if __name__ == "__main__":
