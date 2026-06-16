@@ -5,6 +5,7 @@ This script automates the extraction of researchers' CV data from the
 CNPq Lattes Platform using Playwright.
 """
 
+import argparse
 import logging
 import math
 import os
@@ -19,11 +20,6 @@ from playwright.sync_api import (
     TimeoutError as PlaywrightTimeoutError,
 )
 
-# --- Configuration ---
-OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.list")
-SEARCH_QUERY = "(Farmanguinhos)"
-MAX_CURRICULOS = 20
-
 # --- Logging Setup ---
 logging.basicConfig(
     level=logging.INFO,
@@ -31,6 +27,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+# --- Configuration Variables ---
+OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.list")
+SEARCH_QUERY = "(Farmanguinhos)"
+MAX_CURRICULOS = 20
 
 
 def close_modal_if_exists(page: Page) -> None:
@@ -285,6 +286,19 @@ def run_extraction_pipeline() -> None:
 
 def main() -> None:
     """Entry point of the script."""
+    global SEARCH_QUERY, MAX_CURRICULOS
+    
+    parser = argparse.ArgumentParser(description="Script Lattes data extractor.")
+    parser.add_argument("--query", type=str, help="Search query to be used.")
+    parser.add_argument("--max", type=int, help="Maximum number of curricula to extract (0 for unlimited).")
+    
+    args = parser.parse_args()
+    
+    if args.query:
+        SEARCH_QUERY = args.query
+    if args.max is not None:
+        MAX_CURRICULOS = args.max
+        
     run_extraction_pipeline()
 
 

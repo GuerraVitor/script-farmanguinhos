@@ -1,3 +1,4 @@
+import argparse
 import os
 import shutil
 import subprocess
@@ -14,10 +15,21 @@ def executar_comando(comando, diretorio):
         sys.exit(1)
 
 def main():
+    parser = argparse.ArgumentParser(description="Pipeline run for Script Lattes data extractor.")
+    parser.add_argument("--query", type=str, help="Search query to be used.")
+    parser.add_argument("--max", type=str, help="Maximum number of curricula to extract.")
+    args = parser.parse_args()
+
     print("1. Iniciando o Bot Extrator...")
 
     python_exec = sys.executable
-    executar_comando(f"{python_exec} main.py", PASTA_EXTRATOR)
+    comando_main = f"{python_exec} main.py"
+    if args.query:
+        comando_main += f" --query \"{args.query}\""
+    if args.max:
+        comando_main += f" --max {args.max}"
+
+    executar_comando(comando_main, PASTA_EXTRATOR)
 
     print("2. Movendo output.list para o scriptLattes...")
     origem_output = os.path.join(PASTA_EXTRATOR, "output.list")

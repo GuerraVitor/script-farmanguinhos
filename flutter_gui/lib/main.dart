@@ -14,7 +14,10 @@ class LattesCrawlerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Extrator Lattes',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueGrey,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
       home: const HomeScreen(),
@@ -32,7 +35,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _queryController = TextEditingController();
   final TextEditingController _maxResumesController = TextEditingController(text: '0');
-  
+
   final List<String> _logs = [];
   final ScrollController _scrollController = ScrollController();
   bool _isRunning = false;
@@ -81,26 +84,41 @@ class _HomeScreenState extends State<HomeScreen> {
     _addLog('Aguarde...');
 
     try {
-      // O flutter será executado dentro da pasta flutter_gui
-      // Precisamos apontar para o venv e os scripts na pasta pai (selenium-lattes)
-      String pythonPath = '../venv/bin/python'; 
+      // 1. Descobre o caminho absoluto dinamicamente
+      String pastaFlutter = Directory.current.path;
+      String pastaPai = Directory(pastaFlutter).parent.path;
+
+      // 2. Monta os caminhos absolutos baseados no sistema operacional
+      String pythonPath = '$pastaPai/venv/bin/python';
+      String scriptPath = '$pastaPai/$scriptName';
+
       if (Platform.isWindows) {
-        pythonPath = '..\\venv\\Scripts\\python.exe';
+        pythonPath = '$pastaPai\\venv\\Scripts\\python.exe';
+        scriptPath = '$pastaPai\\$scriptName';
       }
 
-      // IMPORTANTE: Ajuste as flags conforme o argparse dos seus scripts Python.
-      // Assumindo que eles aceitem --query e --max
+      // 3. Trava de Segurança: Verifica se o ambiente virtual existe
+      if (!File(pythonPath).existsSync()) {
+        _addLog('ERRO CRÍTICO: O ambiente virtual Python não foi encontrado!');
+        _addLog('O aplicativo procurou em: $pythonPath');
+        _addLog('Por favor, rode o script "instalar.sh" (ou "instalar.bat") antes de iniciar a extração.');
+        setState(() {
+          _isRunning = false;
+        });
+        return;
+      }
+
       List<String> args = [
-        '../$scriptName',
+        scriptPath,
         '--query', query,
         '--max', _maxResumesController.text
       ];
 
-      // Inicializa o processo do Python
+      // 4. Inicia o processo usando os caminhos absolutos
       final process = await Process.start(
-        pythonPath, 
+        pythonPath,
         args,
-        workingDirectory: '..', // Executa a partir da pasta selenium-lattes
+        workingDirectory: pastaPai,
       );
 
       // Captura a saída padrão (stdout)
@@ -185,9 +203,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Botões de Ação
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -215,9 +233,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Console / Área de Log
             Text(
               'Console de Execução',
