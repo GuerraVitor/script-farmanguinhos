@@ -33,6 +33,30 @@ The extractor interacts with the Lattes platform iteratively:
 
 ## 🛠️ Installation
 
+### ⚡ Quick Setup (Recommended)
+
+We provide automated setup scripts for both Linux/macOS and Windows. These scripts will handle everything automatically:
+
+**Linux/macOS:**
+```bash
+bash instalar.sh
+```
+
+**Windows:**
+```bash
+instalar.bat
+```
+
+These scripts will:
+- Create a Python virtual environment
+- Install all dependencies from `requirements.txt`
+- Download and install the Playwright Chromium browser
+- Provide clear feedback about any issues
+
+### 📋 Manual Setup (Alternative)
+
+If you prefer to set up manually:
+
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
@@ -118,6 +142,30 @@ O extrator interage com a plataforma Lattes de forma iterativa:
 5. Armazena em buffer e grava os dados no arquivo `output.list`.
 
 ## 🛠️ Instalação
+
+### ⚡ Instalação Rápida (Recomendada)
+
+Disponibilizamos scripts de instalação automatizados para Linux/macOS e Windows. Eles tratam de todo o processo automaticamente:
+
+**Linux/macOS:**
+```bash
+bash instalar.sh
+```
+
+**Windows:**
+```bash
+instalar.bat
+```
+
+Esses scripts irão:
+- Criar um ambiente virtual Python
+- Instalar todas as dependências do `requirements.txt`
+- Baixar e instalar o navegador Chromium do Playwright
+- Fornecer feedback claro sobre possíveis problemas
+
+### 📋 Instalação Manual (Alternativa)
+
+Se preferir configurar manualmente:
 
 1. **Clone o repositório:**
    ```bash
