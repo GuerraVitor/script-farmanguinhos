@@ -144,6 +144,7 @@ def extract_curriculum_data(
 
     try:
         new_page.wait_for_selector(".nome", timeout=10000)
+        time.sleep(3)
         nome = new_page.locator(".nome").first.text_content()
         nome = nome.strip() if nome else "NOME_NAO_ENCONTRADO"
 
@@ -287,18 +288,18 @@ def run_extraction_pipeline() -> None:
 def main() -> None:
     """Entry point of the script."""
     global SEARCH_QUERY, MAX_CURRICULOS
-    
+
     parser = argparse.ArgumentParser(description="Script Lattes data extractor.")
     parser.add_argument("--query", type=str, help="Search query to be used.")
     parser.add_argument("--max", type=int, help="Maximum number of curricula to extract (0 for unlimited).")
-    
+
     args = parser.parse_args()
-    
+
     if args.query:
         SEARCH_QUERY = args.query
     if args.max is not None:
         MAX_CURRICULOS = args.max
-        
+
     run_extraction_pipeline()
 
 

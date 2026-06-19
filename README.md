@@ -108,6 +108,34 @@ python run_pipeline.py
 ```
 This script will automatically run the extractor, move the resulting `output.list` into the `scriptLattes` folder, and trigger the `scriptLattes` reporting engine.
 
+### 3. Flutter GUI
+Run the graphical interface built with Flutter for a user-friendly experience:
+
+**Prerequisites:**
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) must be installed and in your PATH
+- Linux: required libraries (see Flutter documentation for your distribution)
+
+**Linux/macOS:**
+```bash
+cd flutter_gui
+flutter pub get
+flutter run -d linux
+```
+
+**Windows:**
+```bash
+cd flutter_gui
+flutter pub get
+flutter run -d windows
+```
+
+**Web (any platform):**
+```bash
+cd flutter_gui
+flutter pub get
+flutter run -d web
+```
+
 ---
 
 # Extrator Lattes (Bot) 🤖🎓
@@ -217,3 +245,31 @@ Esta ferramenta foi desenvolvida para alimentar dados de forma fluida para o `sc
 python run_pipeline.py
 ```
 Este script executará automaticamente o extrator, moverá o arquivo `output.list` resultante para a pasta do `scriptLattes` e iniciará o motor de relatórios do `scriptLattes`.
+
+### 3. Interface Gráfica (Flutter)
+Execute a interface gráfica construída com Flutter para uma experiência mais amigável:
+
+**Pré-requisitos:**
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) deve estar instalado e acessível no PATH
+- Linux: bibliotecas obrigatórias (consulte a documentação do Flutter para sua distribuição)
+
+**Linux/macOS:**
+```bash
+cd flutter_gui
+flutter pub get
+flutter run -d linux
+```
+
+**Windows:**
+```bash
+cd flutter_gui
+flutter pub get
+flutter run -d windows
+```
+
+**Web (qualquer plataforma):**
+```bash
+cd flutter_gui
+flutter pub get
+flutter run -d web
+```
